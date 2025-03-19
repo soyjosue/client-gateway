@@ -13,8 +13,16 @@ export class RpcCustomExceptionFilter implements ExceptionFilter<RpcException> {
     const ctx = host.switchToHttp();
     const response = ctx.getResponse<Response>();
 
-    const rpcError = exception.getError();
-    console.log({ rpcError });
+    const rpcError = exception.getError() as Error;
+
+    if (rpcError.toString().includes('Empty response')) {
+      return response.status(500).json({
+        status: 500,
+        message: rpcError
+          .toString()
+          .substring(0, rpcError.toString().indexOf('(') - 1),
+      });
+    }
 
     if (
       typeof rpcError === 'object' &&
@@ -29,9 +37,9 @@ export class RpcCustomExceptionFilter implements ExceptionFilter<RpcException> {
       return response.status(status).json(rpcError);
     }
 
-    // response.status(401).json({
-    //   status: 401,
-    //   message: 'Hola mundo, saludos a todos!',
-    // });
+    response.status(400).json({
+      status: 400,
+      message: rpcError,
+    });
   }
 }
